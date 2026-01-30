@@ -3,6 +3,7 @@ import { Download, RefreshCw, Copy, Check, FileText } from 'lucide-react';
 import { FileData } from '../types';
 import { base64ToBlob } from '../utils/base64';
 import { parseVtt, VttCue } from '../utils/vtt';
+import { useObjectUrl } from '../hooks/useObjectUrl';
 
 interface ResultViewerProps {
   content: string;
@@ -14,51 +15,37 @@ interface ResultViewerProps {
 
 export const ResultViewer: React.FC<ResultViewerProps> = ({ content, fileName, onReset, fileData, youtubeUrl }) => {
   const [copied, setCopied] = React.useState(false);
-  const [videoUrl, setVideoUrl] = React.useState<string | null>(null);
-  const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
-  const [trackUrl, setTrackUrl] = React.useState<string | null>(null);
   const [audioCaption, setAudioCaption] = React.useState('');
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const cues = React.useMemo<VttCue[]>(() => parseVtt(content), [content]);
 
-  React.useEffect(() => {
-    if (!fileData || !fileData.type.startsWith('video/')) {
-      setVideoUrl(null);
-      return;
-    }
+  const videoBlob = React.useMemo(
+    () => (fileData && fileData.type.startsWith('video/')
+      ? base64ToBlob(fileData.base64, fileData.type)
+      : null),
+    [fileData]
+  );
 
-    const blob = base64ToBlob(fileData.base64, fileData.type);
-    const url = URL.createObjectURL(blob);
-    setVideoUrl(url);
+  const audioBlob = React.useMemo(
+    () => (fileData && fileData.type.startsWith('audio/')
+      ? base64ToBlob(fileData.base64, fileData.type)
+      : null),
+    [fileData]
+  );
 
-    return () => URL.revokeObjectURL(url);
-  }, [fileData]);
+  const trackBlob = React.useMemo(
+    () => (content ? new Blob([content], { type: 'text/vtt' }) : null),
+    [content]
+  );
 
-  React.useEffect(() => {
-    if (!fileData || !fileData.type.startsWith('audio/')) {
-      setAudioUrl(null);
-      return;
-    }
-
-    const blob = base64ToBlob(fileData.base64, fileData.type);
-    const url = URL.createObjectURL(blob);
-    setAudioUrl(url);
-
-    return () => URL.revokeObjectURL(url);
-  }, [fileData]);
+  const videoUrl = useObjectUrl(videoBlob);
+  const audioUrl = useObjectUrl(audioBlob);
+  const trackUrl = useObjectUrl(trackBlob);
 
   React.useEffect(() => {
     if (!content) {
-      setTrackUrl(null);
       setAudioCaption('');
-      return;
     }
-
-    const blob = new Blob([content], { type: 'text/vtt' });
-    const url = URL.createObjectURL(blob);
-    setTrackUrl(url);
-
-    return () => URL.revokeObjectURL(url);
   }, [content]);
 
   const handleAudioTimeUpdate = () => {

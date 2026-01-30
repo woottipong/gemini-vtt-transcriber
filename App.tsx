@@ -5,7 +5,7 @@ import { UrlInput } from './components/UrlInput';
 import { ResultViewer } from './components/ResultViewer';
 import { transcribeAudio } from './services/geminiService';
 import { fetchYoutubeAudio } from './services/youtubeService';
-import { normalizeErrorMessage } from './utils/errors';
+import { mapYoutubeErrorMessage, normalizeErrorMessage } from './utils/errors';
 import { AppStatus, FileData, InputMode } from './types';
 
 const App: React.FC = () => {
@@ -46,13 +46,7 @@ const App: React.FC = () => {
       await runTranscription(downloadedFile);
     } catch (err) {
       console.error(err);
-      const message = normalizeErrorMessage(err);
-      const isNetworkError = message.includes('Failed to fetch')
-        || message.includes('NetworkError')
-        || message.includes('Unexpected token');
-      setError(isNetworkError
-        ? "Could not connect to the backend server. If running locally, ensure 'node server.js' is active."
-        : message);
+      setError(mapYoutubeErrorMessage(err));
       setStatus(AppStatus.ERROR);
     }
   };

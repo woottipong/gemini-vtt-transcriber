@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 // Use PORT from environment for deployment compatibility
 const PORT = process.env.PORT || 3001;
+const KEEP_TEMP_FILES = process.env.KEEP_TEMP_FILES === 'true' || process.env.KEEP_TEMP_FILES === '1';
 
 // Increase limit for potential large payloads
 app.use(express.json({ limit: '50mb' }));
@@ -68,8 +69,10 @@ app.post('/api/process-youtube', async (req, res) => {
       const base64 = fileBuffer.toString('base64');
       const stats = fs.statSync(filePath);
 
-      // Clean up file immediately after reading
-      fs.unlinkSync(filePath);
+      // Clean up file immediately after reading unless explicitly kept
+      if (!KEEP_TEMP_FILES) {
+        fs.unlinkSync(filePath);
+      }
 
       res.json({
         success: true,
@@ -83,7 +86,7 @@ app.post('/api/process-youtube', async (req, res) => {
 
     } catch (readError) {
       console.error("File processing error:", readError);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      if (!KEEP_TEMP_FILES && fs.existsSync(filePath)) fs.unlinkSync(filePath);
       res.status(500).json({ error: 'Failed to process audio file' });
     }
   });
