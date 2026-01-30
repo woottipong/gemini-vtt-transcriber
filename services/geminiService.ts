@@ -9,7 +9,7 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
-const MODEL_ID = 'gemini-3-pro';
+const MODEL_ID = 'gemini-3-pro-preview';
 const TRANSCRIPTION_PROMPT = `You are a professional multilingual transcription engine with speaker identification capabilities.
 Task: Transcribe the audio into the EXACT language being spoken (e.g., if Thai, use Thai).
 Identify different speakers and prefix their speech with their name or a speaker label.
