@@ -11,13 +11,13 @@
 
 ## Estimated Cost Table (Paid Tier)
 
-| Clip Length | Input Tokens | Audio Input Cost (THB) | Output Cost (THB)* | Estimated Total (THB) |
-| ----------- | -----------: | ---------------------: | -----------------: | --------------------: |
-| 1 minute    |        1,920 |                  ~0.07 |              ~0.04 |                 ~0.11 |
-| 5 minutes   |        9,600 |                  ~0.35 |              ~0.20 |                 ~0.55 |
-| 10 minutes  |       19,200 |                  ~0.70 |              ~0.40 |                 ~1.10 |
-| 30 minutes  |       57,600 |                  ~2.10 |              ~1.20 |                 ~3.30 |
-| 1 hour      |      115,200 |                  ~4.20 |              ~2.40 |                 ~6.60 |
+| Clip Length | Estimated Processing Time | Audio Input Cost (THB) | Output Cost (THB)* | Estimated Total (THB) |
+| ----------- | ------------------------: | ---------------------: | -----------------: | --------------------: |
+| 1 minute    |               10 - 20 sec |                  ~0.07 |              ~0.04 |                 ~0.11 |
+| 5 minutes   |               1 - 1.5 min |                  ~0.35 |              ~0.20 |                 ~0.55 |
+| 10 minutes  |                 2 - 3 min |                  ~0.70 |              ~0.40 |                 ~1.10 |
+| 30 minutes  |                 6 - 8 min |                  ~2.10 |              ~1.20 |                 ~3.30 |
+| 1 hour      |               12 - 15 min |                  ~4.20 |              ~2.40 |                 ~6.60 |
 
 \* Output cost varies by subtitle length and language density.
 

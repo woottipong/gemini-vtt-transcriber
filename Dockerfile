@@ -1,5 +1,8 @@
 FROM node:20-slim
 
+ARG GOOGLE_API_KEY
+ENV GOOGLE_API_KEY=${GOOGLE_API_KEY}
+
 # Install system deps for yt-dlp (ffmpeg) and yt-dlp itself
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg python3 python3-pip ca-certificates \

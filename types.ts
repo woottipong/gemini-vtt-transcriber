@@ -6,6 +6,8 @@ export enum AppStatus {
   ERROR = 'ERROR'
 }
 
+export type InputMode = 'file' | 'url';
+
 export interface FileData {
   name: string;
   type: string;

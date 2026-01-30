@@ -1,6 +1,8 @@
 import React from 'react';
 import { Download, RefreshCw, Copy, Check, FileText } from 'lucide-react';
 import { FileData } from '../types';
+import { base64ToBlob } from '../utils/base64';
+import { parseVtt, VttCue } from '../utils/vtt';
 
 interface ResultViewerProps {
   content: string;
@@ -10,20 +12,14 @@ interface ResultViewerProps {
   youtubeUrl?: string;
 }
 
-const base64ToBlob = (base64: string, mimeType: string) => {
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i += 1) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
-};
-
 export const ResultViewer: React.FC<ResultViewerProps> = ({ content, fileName, onReset, fileData, youtubeUrl }) => {
   const [copied, setCopied] = React.useState(false);
   const [videoUrl, setVideoUrl] = React.useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
   const [trackUrl, setTrackUrl] = React.useState<string | null>(null);
+  const [audioCaption, setAudioCaption] = React.useState('');
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const cues = React.useMemo<VttCue[]>(() => parseVtt(content), [content]);
 
   React.useEffect(() => {
     if (!fileData || !fileData.type.startsWith('video/')) {
@@ -39,8 +35,22 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({ content, fileName, o
   }, [fileData]);
 
   React.useEffect(() => {
+    if (!fileData || !fileData.type.startsWith('audio/')) {
+      setAudioUrl(null);
+      return;
+    }
+
+    const blob = base64ToBlob(fileData.base64, fileData.type);
+    const url = URL.createObjectURL(blob);
+    setAudioUrl(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [fileData]);
+
+  React.useEffect(() => {
     if (!content) {
       setTrackUrl(null);
+      setAudioCaption('');
       return;
     }
 
@@ -50,6 +60,21 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({ content, fileName, o
 
     return () => URL.revokeObjectURL(url);
   }, [content]);
+
+  const handleAudioTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (!audio || cues.length === 0) {
+      if (audioCaption) setAudioCaption('');
+      return;
+    }
+
+    const currentTime = audio.currentTime;
+    const cue = cues.find((item) => currentTime >= item.start && currentTime <= item.end);
+    const nextCaption = cue?.text || '';
+    if (nextCaption !== audioCaption) {
+      setAudioCaption(nextCaption);
+    }
+  };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(content);
@@ -81,6 +106,16 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({ content, fileName, o
             <h2 className="text-2xl font-bold text-white tracking-tight">Transcription Complete</h2>
             <p className="text-slate-400 text-sm mt-1 flex items-center gap-2">
               Ready for: <span className="text-indigo-400 font-mono bg-indigo-500/10 px-2 py-0.5 rounded">{fileName}</span>
+              {youtubeUrl && (
+                <a
+                  className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold"
+                  href={youtubeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Source
+                </a>
+              )}
             </p>
           </div>
         </div>
@@ -128,22 +163,30 @@ export const ResultViewer: React.FC<ResultViewerProps> = ({ content, fileName, o
         </div>
       )}
 
-      {!videoUrl && youtubeUrl && (
-        <div className="mb-8 rounded-2xl border border-slate-800/70 bg-slate-900/40 p-5 text-sm text-slate-300">
-          <p className="font-semibold text-white mb-1">YouTube preview limitation</p>
-          <p className="text-slate-400">
-            YouTube embeds do not allow custom VTT overlays in this app. You can still open the video in a new tab and use the generated VTT file.
+      {!videoUrl && audioUrl && (
+        <div className="mb-8">
+          <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/70 p-4 shadow-2xl">
+            <audio
+              ref={audioRef}
+              className="w-full"
+              controls
+              onTimeUpdate={handleAudioTimeUpdate}
+            >
+              <source src={audioUrl} type={fileData?.type} />
+              Your browser does not support the audio tag.
+            </audio>
+            <div className="mt-4 rounded-xl bg-black/70 px-5 py-4 text-center">
+              <p className="text-lg font-semibold text-white whitespace-pre-line">
+                {audioCaption || '—'}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            Audio preview shows synced captions from the generated VTT.
           </p>
-          <a
-            className="inline-flex mt-3 items-center gap-2 text-indigo-400 hover:text-indigo-300"
-            href={youtubeUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open YouTube video
-          </a>
         </div>
       )}
+
 
       {/* Editor Window */}
       <div className="relative group rounded-2xl overflow-hidden border border-slate-800 bg-[#0d1117] shadow-2xl">

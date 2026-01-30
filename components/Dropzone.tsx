@@ -1,6 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Upload, FileAudio, FileVideo, AlertCircle } from 'lucide-react';
 import { FileData } from '../types';
+import { fileToBase64 } from '../utils/base64';
 
 interface DropzoneProps {
   onFileSelect: (file: FileData) => void;
@@ -14,7 +15,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({ onFileSelect, disabled }) =>
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     setError(null);
 
     if (!file.type.startsWith('audio/') && !file.type.startsWith('video/')) {
@@ -27,10 +28,8 @@ export const Dropzone: React.FC<DropzoneProps> = ({ onFileSelect, disabled }) =>
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64String = reader.result as string;
-      const base64Content = base64String.split(',')[1];
+    try {
+      const base64Content = await fileToBase64(file);
 
       onFileSelect({
         name: file.name,
@@ -38,11 +37,9 @@ export const Dropzone: React.FC<DropzoneProps> = ({ onFileSelect, disabled }) =>
         size: file.size,
         base64: base64Content
       });
-    };
-    reader.onerror = () => {
-      setError("Failed to read file.");
-    };
-    reader.readAsDataURL(file);
+    } catch (fileError) {
+      setError(fileError instanceof Error ? fileError.message : "Failed to read file.");
+    }
   };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {

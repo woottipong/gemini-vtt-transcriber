@@ -4,17 +4,19 @@ import { Dropzone } from './components/Dropzone';
 import { UrlInput } from './components/UrlInput';
 import { ResultViewer } from './components/ResultViewer';
 import { transcribeAudio } from './services/geminiService';
-import { AppStatus, FileData } from './types';
+import { fetchYoutubeAudio } from './services/youtubeService';
+import { normalizeErrorMessage } from './utils/errors';
+import { AppStatus, FileData, InputMode } from './types';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
-  const [inputMode, setInputMode] = useState<'file' | 'url'>('file');
+  const [inputMode, setInputMode] = useState<InputMode>('file');
   const [fileData, setFileData] = useState<FileData | null>(null);
   const [urlInput, setUrlInput] = useState<string>('');
   const [vttContent, setVttContent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileSelect = async (file: FileData) => {
+  const runTranscription = async (file: FileData) => {
     setFileData(file);
     setStatus(AppStatus.PROCESSING);
     setError(null);
@@ -23,11 +25,15 @@ const App: React.FC = () => {
       const vtt = await transcribeAudio(file.base64, file.type);
       setVttContent(vtt);
       setStatus(AppStatus.SUCCESS);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || "An unexpected error occurred.");
+      setError(normalizeErrorMessage(err));
       setStatus(AppStatus.ERROR);
     }
+  };
+
+  const handleFileSelect = async (file: FileData) => {
+    await runTranscription(file);
   };
 
   const handleUrlSubmit = async (url: string) => {
@@ -36,33 +42,17 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch('/api/process-youtube', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to download video from backend.");
-      }
-
-      const result = await response.json();
-      const downloadedFile: FileData = result.data;
-
-      setFileData(downloadedFile);
-
-      const vtt = await transcribeAudio(downloadedFile.base64, downloadedFile.type);
-      setVttContent(vtt);
-      setStatus(AppStatus.SUCCESS);
-
-    } catch (err: any) {
+      const downloadedFile = await fetchYoutubeAudio(url);
+      await runTranscription(downloadedFile);
+    } catch (err) {
       console.error(err);
-      let errorMessage = err.message;
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('Unexpected token')) {
-        errorMessage = "Could not connect to the backend server. If running locally, ensure 'node server.js' is active.";
-      }
-      setError(errorMessage);
+      const message = normalizeErrorMessage(err);
+      const isNetworkError = message.includes('Failed to fetch')
+        || message.includes('NetworkError')
+        || message.includes('Unexpected token');
+      setError(isNetworkError
+        ? "Could not connect to the backend server. If running locally, ensure 'node server.js' is active."
+        : message);
       setStatus(AppStatus.ERROR);
     }
   };
@@ -127,8 +117,8 @@ const App: React.FC = () => {
               <button
                 onClick={() => setInputMode('file')}
                 className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${inputMode === 'file'
-                    ? 'bg-slate-700 text-white shadow-lg'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  ? 'bg-slate-700 text-white shadow-lg'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
               >
                 <FileAudio className={`w-4 h-4 ${inputMode === 'file' ? 'text-indigo-400' : ''}`} />
@@ -137,8 +127,8 @@ const App: React.FC = () => {
               <button
                 onClick={() => setInputMode('url')}
                 className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${inputMode === 'url'
-                    ? 'bg-slate-700 text-white shadow-lg'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  ? 'bg-slate-700 text-white shadow-lg'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
               >
                 <Youtube className={`w-4 h-4 ${inputMode === 'url' ? 'text-red-400' : ''}`} />
