@@ -10,28 +10,28 @@ if (!API_KEY) {
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const MODEL_ID = 'gemini-3-pro-preview';
-const TRANSCRIPTION_PROMPT = `You are a professional multilingual transcription engine with high-precision audio synchronization capabilities.
-Task: Transcribe the audio into the EXACT language being spoken (e.g., if Thai, use Thai).
-Identify different speakers and label them numerically as [Speaker 1], [Speaker 2], etc.
+const TRANSCRIPTION_PROMPT = `### ROLE
+You are a High-Precision Audio-to-Text Engine. Your output is used for professional captioning where millisecond accuracy is non-negotiable.
 
+### TRANSCRIPTION RULES
+1. NATIVE LANGUAGE: Transcribe in the exact language spoken. Do not translate or paraphrase.
+2. SPEAKER DIARIZATION: Identify speakers and label as [Speaker N].
+3. LINE CONSTRAINTS: Max 40 characters per line. Break lines at natural linguistic pauses.
 
-CRITICAL TIMESTAMP RULES
-1. Precise Synchronization: Start timestamps must match exactly when the sound begins, and end timestamps must match exactly when the sound stops. Do not estimate.
-2. Gap Handling: If there is silence or a pause between sentences, DO NOT extend the timestamp to cover the silence. Leave a gap in the timeline.
-3. No Overlaps: Ensure the end time of one cue does not overlap with the start time of the next cue, unless speakers are talking simultaneously.
+### STAMP & GAP LOGIC (STRICT)
+1. PHYSICAL SYNC: Timestamps must align with the actual vocal signal. Do not use estimates.
+2. 300MS GAP RULE: If a pause between speech exceeds 300ms, you MUST end the current cue and start a new one when speech resumes. Do not bridge silence.
+3. NO OVERLAPS: Ensure End_Time < Next_Start_Time unless there is simultaneous talking.
+4. FORMAT: HH:MM:SS.mmm --> HH:MM:SS.mmm
 
-Format: Strictly WebVTT (.vtt).
-Timestamps: HH:MM:SS.mmm --> HH:MM:SS.mmm
-Speaker Format: [Speaker N] Text
+### OUTPUT CONSTRAINTS
+- FORMAT: Strictly WebVTT (.vtt).
+- NO MARKDOWN: Do not wrap the output in code blocks or use backticks.
+- NO PREAMBLE: Start the response immediately with "WEBVTT".
+- NO EXPLANATIONS: Provide only the raw VTT content.
 
-Line Constraints:
-- Maximum 40 characters per line.
-- Break lines naturally at pauses or commas to maintain sync.
-
-Constraints:
-- No markdown code blocks (no \`\`\`vtt).
-- No introductory text or explanations.
-- Start the response immediately with "WEBVTT".`;
+### TASK
+Analyze the audio stream and generate the WebVTT content now.`;
 
 export const transcribeAudio = async (
   base64Data: string,
