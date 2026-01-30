@@ -1,0 +1,5 @@
+{
+  "name": "Gemini VTT Transcriber",
+  "description": "A powerful web tool that uses Google Gemini to transcribe audio and video files directly into WebVTT (.vtt) subtitle format. Supports drag-and-drop uploads and instant client-side processing via the Gemini API.",
+  "requestFramePermissions": []
+}

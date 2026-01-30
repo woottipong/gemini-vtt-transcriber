@@ -1,0 +1,15 @@
+services:
+  gemini-vtt:
+    build:
+      context: .
+      args:
+        - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    container_name: gemini_vtt_app
+    ports:
+      - "3000:3001"
+    environment:
+      - PORT=3001
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    volumes:
+      - ./temp:/app/temp
+    restart: unless-stopped
