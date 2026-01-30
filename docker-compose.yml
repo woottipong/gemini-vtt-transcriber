@@ -10,7 +10,7 @@ services:
     environment:
       - PORT=3001
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - KEEP_TEMP_FILES=true
+      - KEEP_TEMP_FILES=false
     volumes:
       - ./temp:/app/temp
     restart: unless-stopped
